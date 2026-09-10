@@ -1,4 +1,7 @@
 package pe.com.upeu.PharmaBackend.service.impl;
+import org.slf4j.ILoggerFactory;
+import org.slf4j.*;
+import org.springframework.cglib.core.Local;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.com.upeu.PharmaBackend.dto.DetalleVentaRequestDTO;
@@ -104,6 +107,10 @@ public class VentaServiceImpl implements VentaService {
     public List<VentaResponseDTO> listar() {
         return ventaRepository.findAll().stream().map(this::convertirResponse).toList();
     }
+
+    @Override
+    public List<DetalleVentaResponseDTO> buscar(Long clienteId, EstadoVenta estado, LocalDateTime desde, LocalDateTime hasta)
+        log.info("Generando Reporte")
 
     private VentaResponseDTO convertirResponse(Venta venta) {
 
