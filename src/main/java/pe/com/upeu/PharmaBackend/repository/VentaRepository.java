@@ -1,5 +1,6 @@
 package pe.com.upeu.PharmaBackend.repository;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -25,6 +26,7 @@ public interface VentaRepository extends JpaRepository<Venta, Long> {
             @Param("clienteId") Long clienteId,
             @Param("estado") EstadoVenta estado,
             @Param("desde") LocalDateTime desde,
-            @Param("hasta") LocalDateTime hasta
+            @Param("hasta") LocalDateTime hasta,
+            Sort sort
     );
 }
