@@ -1,5 +1,4 @@
 package pe.com.upeu.PharmaBackend.dto;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

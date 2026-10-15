@@ -11,7 +11,6 @@ import pe.com.upeu.PharmaBackend.enums.EstadoVenta;
 import pe.com.upeu.PharmaBackend.service.service.VentaService;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -56,15 +55,52 @@ public class VentaController {
         );
     }
 
+    /*
+     * Búsqueda de ventas con filtros combinados.
+     *
+     * Todos los parámetros son opcionales; los que no se envían no
+     * filtran. Sin coincidencias responde 200 con arreglo vacío.
+     */
     @GetMapping("/buscar")
     public ResponseEntity<List<VentaResponseDTO>> buscar(
-            @RequestParam(required = false) Long clienteId,
-            @RequestParam(required = false) EstadoVenta estado,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime desde,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime hasta,
-            @RequestParam(required = false, defaultValue = "fecha") String ordenarPor,
-            @RequestParam(required = false, defaultValue = "asc") String direccion
-    ) {
-        return ResponseEntity.ok(ventaService.buscar(clienteId, estado, desde, hasta, ordenarPor, direccion));
+
+            @RequestParam(required = false)
+            Long clienteId,
+
+            @RequestParam(required = false)
+            EstadoVenta estado,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate desde,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate hasta,
+
+            @RequestParam(required = false, defaultValue = "fecha")
+            String ordenarPor,
+
+            @RequestParam(required = false, defaultValue = "desc")
+            String direccion) {
+
+        return ResponseEntity.ok(
+                ventaService.buscarVentas(
+                        clienteId,
+                        estado,
+                        desde,
+                        hasta,
+                        ordenarPor,
+                        direccion
+                )
+        );
+    }
+    @PatchMapping("/{id}/anular")
+    public ResponseEntity<VentaResponseDTO> anularVenta(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(
+                ventaService.anularVenta(id)
+        );
     }
 }

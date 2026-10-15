@@ -3,19 +3,20 @@ package pe.com.upeu.PharmaBackend.service.service;
 import pe.com.upeu.PharmaBackend.dto.VentaRequestDTO;
 import pe.com.upeu.PharmaBackend.dto.VentaResponseDTO;
 import pe.com.upeu.PharmaBackend.enums.EstadoVenta;
-import java.time.LocalDateTime;
+
+import java.time.LocalDate;
 import java.util.List;
 
 public interface VentaService {
+    VentaResponseDTO anularVenta(Long id);
     VentaResponseDTO registrar(VentaRequestDTO request);
     VentaResponseDTO buscar(Long id);
     List<VentaResponseDTO> listar();
-    List<VentaResponseDTO> buscar(
+    List<VentaResponseDTO> buscarVentas(
             Long clienteId,
             EstadoVenta estado,
-            LocalDateTime desde,
-            LocalDateTime hasta,
+            LocalDate desde,
+            LocalDate hasta,
             String ordenarPor,
-            String direccion
-    );
+            String direccion);
 }

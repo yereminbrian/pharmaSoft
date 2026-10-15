@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pe.com.upeu.PharmaBackend.dto.ProductoRequestDTO;
 import pe.com.upeu.PharmaBackend.dto.ProductoResponseDTO;
+import pe.com.upeu.PharmaBackend.dto.PaginaResponseDTO;
 import pe.com.upeu.PharmaBackend.service.service.ProductoService;
 
 @RestController
@@ -18,24 +19,29 @@ public class ProductoController {
         this.productoService = productoService;
     }
 
-    @PostMapping
-    public ResponseEntity<ProductoResponseDTO> create(@Valid @RequestBody ProductoRequestDTO dto) {
-        return new ResponseEntity<>(productoService.create(dto), HttpStatus.CREATED);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<ProductoResponseDTO> update(@PathVariable Long id, @Valid @RequestBody ProductoRequestDTO dto) {
-        return ResponseEntity.ok(productoService.update(id, dto));
+    @GetMapping
+    public ResponseEntity<PaginaResponseDTO<ProductoResponseDTO>> findAll(
+            @RequestParam(defaultValue = "0") int pagina,
+            @RequestParam(defaultValue = "10") int tamanio,
+            @RequestParam(defaultValue = "nombre") String ordenarPor,
+            @RequestParam(defaultValue = "asc") String direccion) {
+        return ResponseEntity.ok(productoService.listarPaginado(pagina, tamanio, ordenarPor, direccion));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProductoResponseDTO> read(@PathVariable Long id) {
+    public ResponseEntity<ProductoResponseDTO> findById(@PathVariable Long id) {
         return ResponseEntity.ok(productoService.read(id));
     }
 
-    @GetMapping
-    public ResponseEntity<Iterable<ProductoResponseDTO>> readAll() {
-        return ResponseEntity.ok(productoService.readAll());
+    @PostMapping
+    public ResponseEntity<ProductoResponseDTO> create(@Valid @RequestBody ProductoRequestDTO requestDTO) {
+        ProductoResponseDTO response = productoService.create(requestDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ProductoResponseDTO> update(@PathVariable Long id, @Valid @RequestBody ProductoRequestDTO requestDTO) {
+        return ResponseEntity.ok(productoService.update(id, requestDTO));
     }
 
     @DeleteMapping("/{id}")
