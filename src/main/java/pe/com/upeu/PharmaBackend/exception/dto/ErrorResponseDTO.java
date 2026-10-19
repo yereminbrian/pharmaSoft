@@ -1,4 +1,5 @@
-package pe.com.upeu.PharmaBackend.exception;
+package pe.com.upeu.PharmaBackend.exception.dto;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
