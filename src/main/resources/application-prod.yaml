@@ -33,15 +33,22 @@ springdoc:
 # En produccion solo se conserva la traza funcional de los servicios
 # (parametros, filas y duracion); el SQL y el detalle web se apagan.
 logging:
+  file:
+    name: logs/pharma-backend.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 14
   level:
     root: WARN
-    pe.edu.upeu.PharmaBackend: INFO
-    pe.edu.upeu.PharmaBackend.service.impl: INFO
+    pe.com.upeu.PharmaBackend: INFO
+    pe.com.upeu.PharmaBackend.service.impl: INFO
     org.hibernate.SQL: WARN
     org.hibernate.orm.jdbc.bind: WARN
     org.springframework.web: WARN
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger{36} - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{requestId}] %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{requestId}] %logger{36} - %msg%n"
 
 # En produccion el origen del frontend llega por variable de entorno,
 # tambien de forma explicita y sin comodin.

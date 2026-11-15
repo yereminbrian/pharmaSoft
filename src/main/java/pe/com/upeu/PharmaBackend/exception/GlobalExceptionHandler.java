@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -38,7 +39,7 @@ public class GlobalExceptionHandler {
             RecursoNoEncontradoException ex,
             HttpServletRequest request) {
 
-        ErrorResponseDTO error = new ErrorResponseDTO(
+        ErrorResponseDTO error = crearErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.NOT_FOUND.value(),
                 "Not Found",
@@ -62,7 +63,7 @@ public class GlobalExceptionHandler {
             ReglaNegocioException ex,
             HttpServletRequest request) {
 
-        ErrorResponseDTO error = new ErrorResponseDTO(
+        ErrorResponseDTO error = crearErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.CONFLICT.value(),
                 "Conflict",
@@ -98,7 +99,7 @@ public class GlobalExceptionHandler {
                         )
                 );
 
-        ErrorResponseDTO error = new ErrorResponseDTO(
+        ErrorResponseDTO error = crearErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
                 "Bad Request",
@@ -131,7 +132,7 @@ public class GlobalExceptionHandler {
                 "Valor inválido: '" + ex.getValue() + "'"
         );
 
-        ErrorResponseDTO error = new ErrorResponseDTO(
+        ErrorResponseDTO error = crearErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
                 "Bad Request",
@@ -155,7 +156,7 @@ public class GlobalExceptionHandler {
             HttpMessageNotReadableException ex,
             HttpServletRequest request) {
 
-        ErrorResponseDTO error = new ErrorResponseDTO(
+        ErrorResponseDTO error = crearErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
                 "Bad Request",
@@ -184,9 +185,9 @@ public class GlobalExceptionHandler {
 
         log.warn("Violación de integridad en {} | causa={}",
                 request.getRequestURI(),
-                ex.getMostSpecificCause().getMessage());
+                ex.getMostSpecificCause().getClass().getSimpleName());
 
-        ErrorResponseDTO error = new ErrorResponseDTO(
+        ErrorResponseDTO error = crearErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.CONFLICT.value(),
                 "Conflict",
@@ -212,10 +213,9 @@ public class GlobalExceptionHandler {
             AuthenticationException ex,
             HttpServletRequest request) {
 
-        log.warn("Autenticación fallida en {} | causa={}",
-                request.getRequestURI(), ex.getMessage());
+        log.warn("Autenticación fallida en {}", request.getRequestURI());
 
-        ErrorResponseDTO error = new ErrorResponseDTO(
+        ErrorResponseDTO error = crearErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.UNAUTHORIZED.value(),
                 "Unauthorized",
@@ -239,7 +239,7 @@ public class GlobalExceptionHandler {
             AccessDeniedException ex,
             HttpServletRequest request) {
 
-        ErrorResponseDTO error = new ErrorResponseDTO(
+        ErrorResponseDTO error = crearErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.FORBIDDEN.value(),
                 "Forbidden",
@@ -276,7 +276,7 @@ public class GlobalExceptionHandler {
             HttpStatusCode status = springError.getStatusCode();
             HttpStatus resolved = HttpStatus.resolve(status.value());
 
-            ErrorResponseDTO error = new ErrorResponseDTO(
+            ErrorResponseDTO error = crearErrorResponse(
                     LocalDateTime.now(),
                     status.value(),
                     resolved == null ? "Error" : resolved.getReasonPhrase(),
@@ -290,7 +290,7 @@ public class GlobalExceptionHandler {
 
         log.error("Error no controlado en {}", request.getRequestURI(), ex);
 
-        ErrorResponseDTO error = new ErrorResponseDTO(
+        ErrorResponseDTO error = crearErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Internal Server Error",
@@ -302,5 +302,22 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(error);
+    }
+
+    private ErrorResponseDTO crearErrorResponse(
+            LocalDateTime timestamp,
+            int status,
+            String error,
+            String message,
+            String path,
+            Map<String, String> validationErrors) {
+        return new ErrorResponseDTO(
+                timestamp,
+                status,
+                error,
+                message,
+                path,
+                validationErrors,
+                MDC.get("requestId"));
     }
 }

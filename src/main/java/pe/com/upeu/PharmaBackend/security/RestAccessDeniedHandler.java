@@ -24,12 +24,9 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
             HttpServletResponse response,
             AccessDeniedException accessDeniedException) throws IOException {
 
-        log.warn("Acceso denegado: {} {} usuario={}",
+        log.warn("Acceso denegado: {} {}",
                 request.getMethod(),
-                request.getRequestURI(),
-                request.getUserPrincipal() != null
-                        ? request.getUserPrincipal().getName()
-                        : "anónimo");
+                request.getRequestURI());
 
         RespuestaErrorSeguridad.escribir(
                 request,

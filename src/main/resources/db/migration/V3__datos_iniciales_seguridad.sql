@@ -26,9 +26,9 @@ insert into usuarios (username, password, estado, empleado_id, fecha_creacion)
 select 'admin', '$2a$10$yAlQiMu80YDvbdFlElZ5aOLQa/EA2WT05zww41NXklYWcHtw/Ou1O', true, id, systimestamp
 from empleados where dni = '70123456';
 
-insert into usuarios (username, password, estado, empleado_id, fecha_creacion)
-select 'vendedor', '$2a$10$/zBrjcNCd6C9p3RZIUAbAeCObkBaoygc2GIYn.WZ1gDyM2uJUQHhq', true, id, systimestamp
-from empleados where dni = '71234567';
+INSERT INTO usuarios (username, password, estado, empleado_id, fecha_creacion)
+SELECT 'vendedor', '$2a$10$/zBrjcNCd6C9p3RZIUAbAeCObkBaoygc2GIYn.WZ1gDyM2uJUQHhq', true, id, systimestamp
+FROM empleados e WHERE e.dni = '71234567';
 
 insert into usuarios (username, password, estado, empleado_id, fecha_creacion)
 select 'almacen', '$2a$10$OMCdP3idpWxXD6oHD2lXge0M3x1qo/Nz4T43ko9wFgLaeyVwerGbm', true, id, systimestamp

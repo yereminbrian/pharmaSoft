@@ -1,6 +1,8 @@
 package pe.com.upeu.PharmaBackend.service.impl;
 
 import org.springframework.data.domain.Page;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.com.upeu.PharmaBackend.dto.ProductoRequestDTO;
@@ -47,6 +49,7 @@ public class ProductoServiceImpl implements ProductoService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "productos", allEntries = true)
     public ProductoResponseDTO crear(ProductoRequestDTO request) {
         String nombre = request.getNombre().trim();
         if(productoRepository.existsByNombreIgnoreCase(nombre)){
@@ -71,6 +74,7 @@ public class ProductoServiceImpl implements ProductoService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "productos", allEntries = true)
     public ProductoResponseDTO actualizar(Long id, ProductoRequestDTO request) {
         Producto producto = productoRepository.findById(id).orElseThrow(()->
                 new RecursoNoEncontradoException(
@@ -100,6 +104,7 @@ public class ProductoServiceImpl implements ProductoService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "productos", key = "'id-' + #p0")
     public ProductoResponseDTO buscar(Long id) {
 
         log.info("Buscando producto | id={}", id);
@@ -121,6 +126,7 @@ public class ProductoServiceImpl implements ProductoService {
      */
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "productos", allEntries = true)
     public void eliminar(Long id) {
         Producto producto = productoRepository.findById(id).orElseThrow(()->
                 new RecursoNoEncontradoException(
@@ -142,6 +148,7 @@ public class ProductoServiceImpl implements ProductoService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "productos", key = "#p0 + '-' + #p1 + '-' + #p2 + '-' + #p3")
     public PaginaResponseDTO<ProductoResponseDTO> listar(
             int pagina,
             int tamanio,

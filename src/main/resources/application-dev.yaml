@@ -19,11 +19,8 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
-    # Un esquema de desarrollo creado antes por ddl-auto=update ya tiene
-    # las tablas: se registra como version 1 y V1 no se vuelve a ejecutar.
-    # En un esquema vacio se aplica V1 normalmente.
     baseline-on-migrate: true
-    baseline-version: 1
+    baseline-version: 0
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
@@ -35,19 +32,19 @@ springdoc:
 logging:
   level:
     root: INFO
-    pe.edu.upeu.PharmaBackend: DEBUG
-    pe.edu.upeu.PharmaBackend.service.impl: DEBUG
+    pe.com.upeu.PharmaBackend: DEBUG
+    pe.com.upeu.PharmaBackend.service.impl: DEBUG
     org.hibernate.SQL: DEBUG
     org.hibernate.orm.jdbc.bind: TRACE
     org.springframework.web: DEBUG
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{requestId}] %logger{36} - %msg%n"
 
 # Origenes del frontend autorizados a consumir /api/** en desarrollo.
 # Se declaran uno por uno: nunca el comodin "*".
 app:
   cors:
-    allowed-origins: http://localhost:5173,http://127.0.0.1:5173,http://localhost:4200
+    allowed-origins: http://localhost:5173,http://127.0.0.1:5173,http://localhost:4200,http://localhost:8081
   # Clave HMAC del JWT en Base64 (minimo 256 bits). Solo para desarrollo.
   jwt:
     secret: ILPEwcQMZU9TnjpXzv/hRWNoC9n1Imz+nPTBwMZH7TBX9n7f7XagfIgD7LhCEFZNclj1zxfx9FbVvbpfH45HOA==

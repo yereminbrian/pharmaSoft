@@ -2,6 +2,7 @@ package pe.com.upeu.PharmaBackend.service.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.com.upeu.PharmaBackend.dto.DetalleVentaRequestDTO;
@@ -50,6 +51,7 @@ public class VentaServiceImpl implements VentaService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "productos", allEntries = true)
     public VentaResponseDTO registrar(VentaRequestDTO request) {
         Cliente cliente = clienteRepository.findById(request.getClienteId())
                 .orElseThrow(() ->new RecursoNoEncontradoException("Cliente no encontrado con id: "+ request.getClienteId()));
@@ -99,6 +101,12 @@ public class VentaServiceImpl implements VentaService {
 
         Venta guardada =ventaRepository.save(venta);
 
+        log.info("Venta registrada | id={} | clienteId={} | detalles={} | total={}",
+                guardada.getId(),
+                guardada.getCliente().getId(),
+                guardada.getDetalles().size(),
+                guardada.getTotal());
+
         return convertirResponse(guardada);
     }
 
@@ -106,6 +114,7 @@ public class VentaServiceImpl implements VentaService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "productos", allEntries = true)
     public VentaResponseDTO anularVenta(Long id) {
 
         // 1. Buscar la venta

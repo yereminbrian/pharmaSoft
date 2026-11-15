@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.data.domain.Page;
 
+import java.io.Serializable;
 import java.util.List;
 
 /*
@@ -13,7 +14,8 @@ import java.util.List;
  */
 @Getter
 @AllArgsConstructor
-public class PaginaResponseDTO<T> {
+public class PaginaResponseDTO<T> implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private List<T> contenido;
     private int pagina;

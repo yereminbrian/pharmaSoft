@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import pe.com.upeu.PharmaBackend.dto.CategoriaRequestDTO;
 import pe.com.upeu.PharmaBackend.dto.CategoriaResponseDTO;
 import pe.com.upeu.PharmaBackend.entity.Categoria;
@@ -25,6 +27,7 @@ public class CategoriaServiceImpl implements CategoriaService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "categorias", allEntries = true)
     public CategoriaResponseDTO create(CategoriaRequestDTO t) {
         String nombre = t.getNombre().trim();
         if(categoriaRepository.existsByNombreIgnoreCase(nombre)) {
@@ -41,6 +44,7 @@ public class CategoriaServiceImpl implements CategoriaService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = {"categorias", "productos"}, allEntries = true)
     public CategoriaResponseDTO update(Long aLong, CategoriaRequestDTO t) {
 
         Categoria categoria = categoriaRepository.findById(aLong).orElseThrow(()->
@@ -56,6 +60,7 @@ public class CategoriaServiceImpl implements CategoriaService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "categorias", key = "'id-' + #p0")
     public CategoriaResponseDTO read(Long aLong) {
         Categoria categoria = categoriaRepository.findById(aLong).
                 orElseThrow(()->
@@ -65,6 +70,7 @@ public class CategoriaServiceImpl implements CategoriaService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "categorias", allEntries = true)
     public void delete(Long aLong) {
         Categoria categoria = categoriaRepository.findById(aLong).orElseThrow(()->
                 new RecursoNoEncontradoException("Categoria no encontrada con el ID: " + aLong)
@@ -74,6 +80,7 @@ public class CategoriaServiceImpl implements CategoriaService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "categorias", key = "'todas'")
     public Iterable<CategoriaResponseDTO> readAll() {
         return categoriaRepository.findAll().
                 stream().
