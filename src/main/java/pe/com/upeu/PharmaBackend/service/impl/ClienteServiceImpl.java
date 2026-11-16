@@ -3,6 +3,8 @@ package pe.com.upeu.PharmaBackend.service.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import pe.com.upeu.PharmaBackend.auditoria.EventoAuditoria;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 import pe.com.upeu.PharmaBackend.dto.ClienteRequestDTO;
 import pe.com.upeu.PharmaBackend.dto.ClienteResponseDTO;
@@ -22,10 +24,12 @@ public class ClienteServiceImpl
             LoggerFactory.getLogger(ClienteServiceImpl.class);
 
     private final ClienteRepository clienteRepository;
+    private final ApplicationEventPublisher eventos;
 
-    public ClienteServiceImpl(
-            ClienteRepository clienteRepository) {
+    public ClienteServiceImpl(ClienteRepository clienteRepository,
+            ApplicationEventPublisher eventos) {
         this.clienteRepository = clienteRepository;
+        this.eventos = eventos;
     }
 
     @Override
@@ -33,10 +37,7 @@ public class ClienteServiceImpl
     public ClienteResponseDTO create(
             ClienteRequestDTO request) {
 
-        log.info(
-                "Registrando cliente con DNI={}",
-                request.getDni()
-        );
+        log.info("Registrando cliente");
 
         String dni = request.getDni().trim();
         String email = request.getEmail()
@@ -77,6 +78,9 @@ public class ClienteServiceImpl
 
         Cliente guardado =
                 clienteRepository.save(cliente);
+        eventos.publishEvent(EventoAuditoria.de(
+                "CLIENTE_REGISTRADO", "Cliente", guardado.getId(),
+                "Cliente registrado"));
 
         log.info(
                 "Cliente registrado correctamente id={}",
@@ -174,6 +178,9 @@ public class ClienteServiceImpl
 
         Cliente actualizado =
                 clienteRepository.save(cliente);
+        eventos.publishEvent(EventoAuditoria.de(
+                "CLIENTE_ACTUALIZADO", "Cliente", actualizado.getId(),
+                "Datos del cliente actualizados"));
 
         log.info(
                 "Cliente id={} actualizado correctamente",
@@ -196,6 +203,9 @@ public class ClienteServiceImpl
                         );
 
         clienteRepository.delete(cliente);
+        eventos.publishEvent(EventoAuditoria.de(
+                "CLIENTE_ELIMINADO", "Cliente", cliente.getId(),
+                "Cliente eliminado"));
 
         log.info(
                 "Cliente id={} eliminado correctamente",
@@ -216,7 +226,9 @@ public class ClienteServiceImpl
                 cliente.getDireccion(),
                 cliente.getEstado(),
                 cliente.getFechaCreacion(),
-                cliente.getFechaModificacion()
+                cliente.getFechaModificacion(),
+                cliente.getCreadoPor(),
+                cliente.getModificadoPor()
         );
     }
 

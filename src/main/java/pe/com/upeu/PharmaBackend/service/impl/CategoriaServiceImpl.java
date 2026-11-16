@@ -3,6 +3,8 @@ package pe.com.upeu.PharmaBackend.service.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import pe.com.upeu.PharmaBackend.auditoria.EventoAuditoria;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -21,8 +23,12 @@ public class CategoriaServiceImpl implements CategoriaService {
     private static final Logger LOG = LoggerFactory.getLogger(CategoriaServiceImpl.class);
 
     private final CategoriaRepository categoriaRepository;
-    public CategoriaServiceImpl(CategoriaRepository categoriaRepository) {
+    private final ApplicationEventPublisher eventos;
+
+    public CategoriaServiceImpl(CategoriaRepository categoriaRepository,
+            ApplicationEventPublisher eventos) {
         this.categoriaRepository = categoriaRepository;
+        this.eventos = eventos;
     }
 
     @Override
@@ -76,6 +82,9 @@ public class CategoriaServiceImpl implements CategoriaService {
                 new RecursoNoEncontradoException("Categoria no encontrada con el ID: " + aLong)
         );
         categoriaRepository.delete(categoria);
+        eventos.publishEvent(EventoAuditoria.de(
+                "CATEGORIA_ELIMINADA", "Categoria", categoria.getId(),
+                "Categoría eliminada"));
     }
 
     @Override
@@ -95,7 +104,9 @@ public class CategoriaServiceImpl implements CategoriaService {
                 categoria.getDescripcion(),
                 categoria.getEstado(),
                 categoria.getFechaCreacion(),
-                categoria.getFechaModificacion()
+                categoria.getFechaModificacion(),
+                categoria.getCreadoPor(),
+                categoria.getModificadoPor()
         );
     }
 }

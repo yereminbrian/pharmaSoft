@@ -17,10 +17,13 @@ import pe.com.upeu.PharmaBackend.repository.CategoriaRepository;
 import pe.com.upeu.PharmaBackend.repository.ProductoRepository;
 import pe.com.upeu.PharmaBackend.service.service.ProductoService;
 
+import java.math.BigDecimal;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
+import org.springframework.context.ApplicationEventPublisher;
+import pe.com.upeu.PharmaBackend.auditoria.EventoAuditoria;
 import pe.com.upeu.PharmaBackend.util.PaginacionUtil;
 
 
@@ -38,13 +41,16 @@ public class ProductoServiceImpl implements ProductoService {
     private final ProductoRepository productoRepository;
     private final CategoriaRepository categoriaRepository;
     private final ProductoMapper productoMapper;
+    private final ApplicationEventPublisher eventos;
 
     public ProductoServiceImpl(ProductoRepository productoRepository,
                                CategoriaRepository categoriaRepository,
-                               ProductoMapper productoMapper) {
+                               ProductoMapper productoMapper,
+                               ApplicationEventPublisher eventos) {
         this.productoRepository = productoRepository;
         this.categoriaRepository = categoriaRepository;
         this.productoMapper = productoMapper;
+        this.eventos = eventos;
     }
 
     @Override
@@ -90,6 +96,7 @@ public class ProductoServiceImpl implements ProductoService {
         }
 
         Categoria categoria = buscarCategoria(request.getCategoriaId());
+        BigDecimal precioAnterior = producto.getPrecio();
 
         producto.setNombre(nombre);
         producto.setPrecio(request.getPrecio());
@@ -98,6 +105,11 @@ public class ProductoServiceImpl implements ProductoService {
         producto.setCategoria(categoria);
 
         Producto prodActualizado = productoRepository.saveAndFlush(producto);
+        if (precioAnterior.compareTo(prodActualizado.getPrecio()) != 0) {
+            eventos.publishEvent(EventoAuditoria.de(
+                    "PRECIO_MODIFICADO", "Producto", prodActualizado.getId(),
+                    precioAnterior + " -> " + prodActualizado.getPrecio()));
+        }
 
         return productoMapper.toResponse(prodActualizado);
     }
@@ -142,6 +154,8 @@ public class ProductoServiceImpl implements ProductoService {
 
         producto.setEstado(false);
         productoRepository.save(producto);
+        eventos.publishEvent(EventoAuditoria.de(
+                "PRODUCTO_ELIMINADO", "Producto", id, producto.getNombre()));
 
         log.info("Producto dado de baja | id={} | nombre={}", id, producto.getNombre());
     }

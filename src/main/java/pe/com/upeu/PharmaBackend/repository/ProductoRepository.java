@@ -1,10 +1,17 @@
 package pe.com.upeu.PharmaBackend.repository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import pe.com.upeu.PharmaBackend.entity.Producto;
 
 import java.util.List;
 
 public interface ProductoRepository extends JpaRepository<Producto, Long> {
+
+    @Override
+    @EntityGraph(attributePaths = "categoria")
+    Page<Producto> findAll(Pageable pageable);
 
     boolean existsByNombreIgnoreCase(String nombre);
     boolean existsByNombreIgnoreCaseAndIdNot(String nombre, long id);

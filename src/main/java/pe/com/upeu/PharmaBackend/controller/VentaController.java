@@ -5,6 +5,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import pe.com.upeu.PharmaBackend.dto.PaginaResponseDTO;
 import pe.com.upeu.PharmaBackend.dto.VentaRequestDTO;
 import pe.com.upeu.PharmaBackend.dto.VentaResponseDTO;
 import pe.com.upeu.PharmaBackend.enums.EstadoVenta;
@@ -62,7 +63,7 @@ public class VentaController {
      * filtran. Sin coincidencias responde 200 con arreglo vacío.
      */
     @GetMapping("/buscar")
-    public ResponseEntity<List<VentaResponseDTO>> buscar(
+    public ResponseEntity<PaginaResponseDTO<VentaResponseDTO>> buscar(
 
             @RequestParam(required = false)
             Long clienteId,
@@ -78,6 +79,10 @@ public class VentaController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate hasta,
 
+            @RequestParam(defaultValue = "0") int pagina,
+
+            @RequestParam(defaultValue = "20") int tamanio,
+
             @RequestParam(required = false, defaultValue = "fecha")
             String ordenarPor,
 
@@ -90,6 +95,8 @@ public class VentaController {
                         estado,
                         desde,
                         hasta,
+                        pagina,
+                        tamanio,
                         ordenarPor,
                         direccion
                 )

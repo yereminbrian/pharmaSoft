@@ -1,11 +1,17 @@
 package pe.com.upeu.PharmaBackend.service.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Sort;
+import java.util.HashMap;
+import java.util.Map;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pe.com.upeu.PharmaBackend.auditoria.EventoAuditoria;
 import pe.com.upeu.PharmaBackend.dto.DetalleVentaRequestDTO;
+import pe.com.upeu.PharmaBackend.dto.PaginaResponseDTO;
 import pe.com.upeu.PharmaBackend.dto.DetalleVentaResponseDTO;
 import pe.com.upeu.PharmaBackend.dto.VentaRequestDTO;
 import pe.com.upeu.PharmaBackend.dto.VentaResponseDTO;
@@ -20,11 +26,11 @@ import pe.com.upeu.PharmaBackend.repository.ClienteRepository;
 import pe.com.upeu.PharmaBackend.repository.ProductoRepository;
 import pe.com.upeu.PharmaBackend.repository.VentaRepository;
 import pe.com.upeu.PharmaBackend.service.service.VentaService;
+import pe.com.upeu.PharmaBackend.util.PaginacionUtil;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Set;
 
@@ -35,6 +41,7 @@ public class VentaServiceImpl implements VentaService {
     private final VentaRepository ventaRepository;
     private final ClienteRepository clienteRepository;
     private final ProductoRepository productoRepository;
+    private final ApplicationEventPublisher eventos;
 
     private static final Set<String> CAMPOS_ORDENABLES = Set.of("id", "fecha", "total", "estado");
     private static final String ORDEN_POR_DEFECTO = "fecha";
@@ -42,11 +49,13 @@ public class VentaServiceImpl implements VentaService {
     public VentaServiceImpl(
             VentaRepository ventaRepository,
             ClienteRepository clienteRepository,
-            ProductoRepository productoRepository) {
+            ProductoRepository productoRepository,
+            ApplicationEventPublisher eventos) {
 
         this.ventaRepository = ventaRepository;
         this.clienteRepository = clienteRepository;
         this.productoRepository = productoRepository;
+        this.eventos = eventos;
     }
 
     @Override
@@ -99,7 +108,11 @@ public class VentaServiceImpl implements VentaService {
 
         venta.setTotal(total);
 
-        Venta guardada =ventaRepository.save(venta);
+        Venta guardada = ventaRepository.save(venta);
+        eventos.publishEvent(EventoAuditoria.de(
+                "VENTA_REGISTRADA", "Venta", guardada.getId(),
+                "total=" + guardada.getTotal() + " | items="
+                        + guardada.getDetalles().size()));
 
         log.info("Venta registrada | id={} | clienteId={} | detalles={} | total={}",
                 guardada.getId(),
@@ -154,6 +167,9 @@ public class VentaServiceImpl implements VentaService {
 
         // 6. Guardar los cambios
         Venta ventaAnulada = ventaRepository.save(venta);
+        eventos.publishEvent(EventoAuditoria.de(
+                "VENTA_ANULADA", "Venta", ventaAnulada.getId(),
+                "total=" + ventaAnulada.getTotal()));
 
         // 7. Registrar la operación en el log
         log.info("Venta anulada correctamente | id={}", id);
@@ -179,89 +195,51 @@ public class VentaServiceImpl implements VentaService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<VentaResponseDTO> buscarVentas(
+    public PaginaResponseDTO<VentaResponseDTO> buscarVentas(
             Long clienteId,
             EstadoVenta estado,
             LocalDate desde,
             LocalDate hasta,
+            int pagina,
+            int tamanio,
             String ordenarPor,
             String direccion) {
 
         long inicio = System.currentTimeMillis();
-
         log.info("Inicio buscar ventas | clienteId={} | estado={} | "
-                        + "desde={} | hasta={} | ordenarPor={} | direccion={}",
-                clienteId, estado, desde, hasta, ordenarPor, direccion);
+                        + "desde={} | hasta={} | pagina={} | tamanio={}",
+                clienteId, estado, desde, hasta, pagina, tamanio);
 
-        if (desde != null
-                && hasta != null
-                && desde.isAfter(hasta)) {
-
+        if (desde != null && hasta != null && desde.isAfter(hasta)) {
             throw new ReglaNegocioException(
-                    "El rango de fechas es inválido: 'desde' ("
-                            + desde
-                            + ") es posterior a 'hasta' ("
-                            + hasta + ")");
+                    "El rango de fechas es inválido: 'desde' es posterior a 'hasta'");
         }
 
-        Sort sort = construirSort(ordenarPor, direccion);
+        Pageable pageable = PaginacionUtil.construir(
+                pagina, tamanio, ordenarPor, direccion,
+                CAMPOS_ORDENABLES, ORDEN_POR_DEFECTO);
+        LocalDateTime desdeHora = desde == null ? null : desde.atStartOfDay();
+        LocalDateTime hastaHora = hasta == null
+                ? null : hasta.plusDays(1).atStartOfDay();
 
-        LocalDateTime desdeHora = (desde == null)
-                ? null
-                : desde.atStartOfDay();
+        Page<Venta> resultado = ventaRepository.buscar(
+                clienteId, estado, desdeHora, hastaHora, pageable);
+        List<Long> ids = resultado.getContent().stream()
+                .map(Venta::getId)
+                .toList();
+        Map<Long, Venta> ventasConDetalle = new HashMap<>();
+        if (!ids.isEmpty()) {
+            ventaRepository.cargarConDetalles(ids)
+                    .forEach(venta -> ventasConDetalle.put(venta.getId(), venta));
+        }
 
-        LocalDateTime hastaHora = (hasta == null)
-                ? null
-                : hasta.atTime(LocalTime.MAX);
-
-        List<VentaResponseDTO> resultado =
-                ventaRepository
-                        .buscar(clienteId, estado, desdeHora, hastaHora, sort)
-                        .stream()
-                        .map(this::convertirResponse)
-                        .toList();
-
-        log.info("Fin buscar ventas | clienteId={} | estado={} | "
-                        + "desde={} | hasta={} | orden={} {} | "
-                        + "filas={} | duracionMs={}",
-                clienteId, estado, desde, hasta, ordenarPor, direccion,
-                resultado.size(),
+        Page<VentaResponseDTO> respuesta = resultado.map(venta ->
+                convertirResponse(ventasConDetalle.get(venta.getId())));
+        log.info("Fin buscar ventas | pagina={} | filas={} | total={} | duracionMs={}",
+                pagina, respuesta.getNumberOfElements(),
+                respuesta.getTotalElements(),
                 System.currentTimeMillis() - inicio);
-
-        return resultado;
-    }
-
-    private Sort construirSort(String ordenarPor, String direccion) {
-
-        String campo = (ordenarPor == null || ordenarPor.isBlank())
-                ? ORDEN_POR_DEFECTO
-                : ordenarPor.trim();
-
-        if (!CAMPOS_ORDENABLES.contains(campo)) {
-
-            throw new ReglaNegocioException(
-                    "El campo de ordenamiento '"
-                            + campo
-                            + "' no está permitido. Campos válidos: "
-                            + CAMPOS_ORDENABLES);
-        }
-
-        String sentido = (direccion == null || direccion.isBlank())
-                ? "desc"
-                : direccion.trim();
-
-        if (!sentido.equalsIgnoreCase("asc")
-                && !sentido.equalsIgnoreCase("desc")) {
-
-            throw new ReglaNegocioException(
-                    "La dirección de ordenamiento '"
-                            + sentido
-                            + "' no está permitida. Valores válidos: asc, desc");
-        }
-
-        return sentido.equalsIgnoreCase("asc")
-                ? Sort.by(campo).ascending()
-                : Sort.by(campo).descending();
+        return PaginaResponseDTO.de(respuesta);
     }
 
     private VentaResponseDTO convertirResponse(Venta venta) {
@@ -288,7 +266,8 @@ public class VentaServiceImpl implements VentaService {
                 clienteNombre,
                 venta.getEstado().name(),
                 venta.getTotal(),
-                detalles
+                detalles,
+                venta.getCreadoPor()
         );
     }
 }
